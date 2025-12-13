@@ -1,0 +1,33 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql" // or "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Order {
+  id        String   @id @default(uuid())
+  type      String  // e.g., "MARKET" or "LIMIT"
+  side      String   // "BUY" or "SELL"
+  token     String   // token symbol like "SOL_USDC"
+  amount    Float
+  price     Float?   // price on execution or submission
+  dex       String?  // e.g., Raydium or Meteora
+  txHash    String?
+  error     String?
+  status    OrderStatus @default(PENDING)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum OrderStatus {
+  PENDING
+  ROUTING
+  SUBMITTED
+  CONFIRMED
+  FAILED
+}
