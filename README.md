@@ -25,6 +25,8 @@ It is designed to simulate real-world backend systems used in trading and high-t
 - BullMQ
 - Vercel (Deployment)
 
+---
+
 Commands to run : 1. npx ts-node src/lib/worker.ts
                   2. npx ts-node src/app.ts
                   3. cd client
