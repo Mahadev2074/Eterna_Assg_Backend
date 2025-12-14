@@ -25,6 +25,52 @@ It is designed to simulate real-world backend systems used in trading and high-t
 - BullMQ
 - Vercel (Deployment)
 
+
+---
+
+## 🔑 The 5 Main Components
+
+### 1️⃣ API Server (Fastify)
+
+**Responsibilities:**
+- Accepts incoming `POST /order` HTTP requests
+- Validates request payload
+- Saves the order in **PostgreSQL** with status `PENDING`
+- Pushes a job into the **Redis Queue**
+- Immediately responds with an `orderId`
+
+---
+
+### 2️⃣ Message Broker (Redis)
+
+**Responsibilities:**
+**Queue (BullMQ):**
+- Holds orders waiting to be processed
+- Ensures retry, durability, and ordered execution
+
+**Pub/Sub:**
+- Broadcasts order status updates such as:
+  - `PROCESSING`
+  - `COMPLETED`
+  - `FAILED`
+---
+
+### 3️⃣ Worker Service
+
+**Responsibilities:**
+- Pulls orders from Redis Queue one by one
+- Executes the core order logic
+- Calls the **DexRouter**
+- Updates order status in PostgreSQL
+- Publishes results via Redis Pub/Sub
+---
+
+### 4️⃣ DexRouter (Business Logic)
+
+**Responsibilities:**
+- Compares prices across liquidity sources
+- Determines the best execution route
+- (Example) Chooses between **Raydium** and **Meteora**
 ---
 
 Commands to run : 1. npx ts-node src/lib/worker.ts
