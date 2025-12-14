@@ -32,4 +32,16 @@ Commands to run : 1. npx ts-node src/lib/worker.ts
                   3. cd client
                      npm run dev
                      
+---
+Postman collection
+
+{
+  "message": "Route GET:/api/orders not found",
+  "error": "Not Found",
+  "statusCode": 404
+}
+
+
+
+<img width="1392" height="983" alt="image" src="https://github.com/user-attachments/assets/1fe37ed5-3187-4bb7-8516-e76bc2fa2c0f" />
 
