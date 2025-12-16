@@ -1,95 +1,96 @@
-# Eterna_Assg_Backend
+# 🚀 Order Execution Engine (Eterna Backend Task 2)
 
-# 🚀 Order Execution Engine (Backend)
+An order execution engine built with **Node.js** and **TypeScript** that processes **Limit Orders** with intelligent DEX routing (Raydium vs. Meteora) and real-time WebSocket status updates.
 
-A scalable backend service for handling order submission, queuing, and execution using an asynchronous, event-driven architecture.
-
-🔗 **Live Deployment**: https://order-execution-engine-sach.vercel.app/
-
-🔗 **Production**: https://order-execution-engine-production-51ba.up.railway.app/api/orders
+> **Deployment URL:** [Insert your free hosting URL here, e.g., https://eterna-backend-demo.onrender.com]  
+> **YouTube Demo:** [Insert your YouTube video link here]
 
 ---
 
-## 📌 Overview
+## 📋 Project Overview
 
-This project implements an **Order Execution Engine** that accepts orders via REST APIs, validates them, and processes execution asynchronously using a queue-based system.
+This backend system simulates a high-frequency trading execution flow on the Solana network (using a Mock Implementation strategy). It handles the full lifecycle of an order: reception, intelligent routing based on best price, transaction simulation, and real-time client notification via WebSockets.
 
-It is designed to simulate real-world backend systems used in trading and high-throughput applications, focusing on scalability, reliability, and clean architecture.
+### Why Limit Orders?
+I chose **Limit Orders** to demonstrate handling state and conditional execution. Unlike market orders which execute immediately, limit orders require the engine to check price conditions against the order's constraints, adding a layer of logic that showcases better architectural control over the "pending" and "routing" states.
 
----
-
-## 🛠 Tech Stack
-
-- Node.js
-- TypeScript
-- Express.js
-- Redis
-- BullMQ
-- Vercel (Deployment)
-
+**Extensibility:**
+To support *Market* or *Sniper* orders, we would simply abstract the `OrderProcessor` class. A *Market* order would bypass the price condition check (executing immediately at best available price), while a *Sniper* order would add a block-monitoring service to trigger execution only when liquidity is added to a pool.
 
 ---
 
-## 🔑 The 5 Main Components
+## 🛠 Features
 
-### 1️⃣ API Server (Fastify)
-
-**Responsibilities:**
-- Accepts incoming `POST /order` HTTP requests
-- Validates request payload
-- Saves the order in **PostgreSQL** with status `PENDING`
-- Pushes a job into the **Redis Queue**
-- Immediately responds with an `orderId`
+* **REST API:** Secure endpoint for submitting orders.
+* **Intelligent DEX Routing:** Simulates fetching quotes from **Raydium** and **Meteora**, comparing prices, and selecting the optimal route (best price/lowest slippage).
+* **WebSocket Updates:** Real-time feedback loop pushing status changes (`pending` → `routing` → `confirmed`) to the client.
+* **Queue Processing:** Uses an internal queue to manage high loads and ensure orders are processed sequentially and reliably.
+* **Mock Execution:** Simulates realistic network latency (2-3s) and price variations (2-5%) for robust testing without devnet funds.
 
 ---
 
-### 2️⃣ Message Broker (Redis)
+## ⚙️ Architecture & Design Decisions
 
-**Responsibilities:**
-**Queue (BullMQ):**
-- Holds orders waiting to be processed
-- Ensures retry, durability, and ordered execution
+### 1. Order Execution Flow
+The system follows a non-blocking, event-driven architecture:
+1.  **Submission:** `POST /api/orders/execute` validates the payload and pushes the order to an in-memory queue.
+2.  **WebSocket Upgrade:** The client connects to the WS server using the returned `orderId` to listen for updates.
+3.  **Processing (Queue Consumer):**
+    * **Routing:** The engine mocks API calls to Raydium and Meteora.
+    * **Decision:** It compares the mock prices. If Raydium offers 105 SOL/USDC and Meteora offers 103, the engine routes to Raydium.
+    * **Execution:** A transaction is "built" and "submitted" (simulated delay).
+4.  **Completion:** The final status (`confirmed` or `failed`) is pushed to the client, and the loop ends.
 
-**Pub/Sub:**
-- Broadcasts order status updates such as:
-  - `PROCESSING`
-  - `COMPLETED`
-  - `FAILED`
+### 2. Status Lifecycle
+* 🟡 **PENDING**: Order received and queued.
+* 🔍 **ROUTING**: Fetching and comparing DEX quotes.
+* 🏗️ **BUILDING**: Constructing the transaction payload.
+* 🚀 **SUBMITTED**: Transaction sent to the network (mock delay).
+* ✅ **CONFIRMED**: Success! Includes `txHash` and execution price.
+
 ---
 
-### 3️⃣ Worker Service
+## 🚀 Setup & Installation
 
-**Responsibilities:**
-- Pulls orders from Redis Queue one by one
-- Executes the core order logic
-- Calls the **DexRouter**
-- Updates order status in PostgreSQL
-- Publishes results via Redis Pub/Sub
+### Prerequisites
+* Node.js (v16+)
+* npm or yarn
+
+### Steps
+1.  **Clone the repository**
+    ```bash
+    git clone [https://github.com/Mahadev2074/Eterna_Assg_Backend.git](https://github.com/Mahadev2074/Eterna_Assg_Backend.git)
+    cd Eterna_Assg_Backend
+    ```
+
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
+
+3.  **Configure Environment**
+    Create a `.env` file in the root directory (optional for mock, but good practice):
+    ```env
+    PORT=3000
+    NODE_ENV=development
+    ```
+
+4.  **Run the Server**
+    ```bash
+    # Development mode
+    npm run dev
+
+    # Production build
+    npm run build
+    npm start
+    ```
+
 ---
 
-### 4️⃣ DexRouter (Business Logic)
+## 🧪 Testing
 
-**Responsibilities:**
-- Compares prices across liquidity sources
-- Determines the best execution route
-- (Example) Chooses between **Raydium** and **Meteora**
----
+### 1. Running Automated Tests
+The project includes unit and integration tests covering routing logic, queue behavior, and WebSocket lifecycles.
 
-Commands to run : 1. npx ts-node src/lib/worker.ts
-                  2. npx ts-node src/app.ts
-                  3. cd client
-                     npm run dev
-                     
----
-Postman collection
-
-{
-  "message": "Route GET:/api/orders not found",
-  "error": "Not Found",
-  "statusCode": 404
-}
-
-
-
-<img width="1392" height="983" alt="image" src="https://github.com/user-attachments/assets/1fe37ed5-3187-4bb7-8516-e76bc2fa2c0f" />
-
+```bash
+npm test
