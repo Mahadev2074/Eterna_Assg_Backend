@@ -29,6 +29,39 @@ To support *Market* or *Sniper* orders, we would simply abstract the `OrderProce
 
 ---
 
+---
+
+## 📡 API Documentation
+
+### 1. Submit Order (HTTP)
+**Endpoint:** `POST /api/orders/execute`  
+**Description:** Validates order details and pushes the order to the processing queue. Returns an `orderId` immediately for WebSocket subscription.
+
+**Request Body:**
+json
+{
+  "pair": "SOL/USDC",
+  "amount": 10,
+  "type": "limit",
+  "limitPrice": 145.50
+}
+
+{
+  "status": "queued",
+  "orderId": "ord_123456789",
+  "message": "Order validated and queued for execution."
+}
+
+// Message 1
+{ "orderId": "...", "status": "pending", "timestamp": "..." }
+
+// Message 2
+{ "orderId": "...", "status": "routing", "info": "Checking Raydium vs Meteora..." }
+
+// Message 3
+{ "orderId": "...", "status": "confirmed", "txHash": "sol_tx_99...", "price": 145.55 }
+
+
 ## ⚙️ Architecture & Design Decisions
 
 The system is designed as a non-blocking, event-driven architecture that handles high concurrency through an internal queue system.
