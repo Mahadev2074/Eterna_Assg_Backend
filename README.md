@@ -2,27 +2,27 @@
 
 An order execution engine built with **Node.js** and **TypeScript** that processes **Limit Orders** with intelligent DEX routing (Raydium vs. Meteora) and real-time WebSocket status updates.
 
-> **Deployment URL:** [Insert your free hosting URL here, e.g., https://eterna-backend-demo.onrender.com]  
-> **YouTube Demo:** [Insert your YouTube video link here]
+> **Deployment URL:** https://order-execution-engine-sach.vercel.app/ 
+> **Production:** https://order-execution-engine-production-51ba.up.railway.app/api/orders
 
 ---
 
 ## 📋 Project Overview
 
-This backend system simulates a high-frequency trading execution flow on the Solana network (using a Mock Implementation strategy). It handles the full lifecycle of an order: reception, intelligent routing based on best price, transaction simulation, and real-time client notification via WebSockets.
+This backend system simulates a high-frequency trading execution flow on the Solana network. It handles the full lifecycle of an order—from reception and intelligent routing based on the best price to transaction simulation and real-time client notification via WebSockets.
 
 ### Why Limit Orders?
-I chose **Limit Orders** to demonstrate handling state and conditional execution. Unlike market orders which execute immediately, limit orders require the engine to check price conditions against the order's constraints, adding a layer of logic that showcases better architectural control over the "pending" and "routing" states.
+I chose **Limit Orders** to demonstrate handling state and conditional execution. Unlike market orders which execute immediately, limit orders require the engine to check price conditions against the order's constraints. This adds a layer of logic that showcases better architectural control over the "pending" and "routing" states.
 
-**Extensibility:**
-To support *Market* or *Sniper* orders, we would simply abstract the `OrderProcessor` class. A *Market* order would bypass the price condition check (executing immediately at best available price), while a *Sniper* order would add a block-monitoring service to trigger execution only when liquidity is added to a pool.
+### Extensibility
+To support *Market* or *Sniper* orders, we would simply abstract the `OrderProcessor` class. A *Market* order would bypass the price condition check (executing immediately), while a *Sniper* order would add a block-monitoring service to trigger execution only when liquidity is added to a pool.
 
 ---
 
 ## 🛠 Features
 
 * **REST API:** Secure endpoint for submitting orders.
-* **Intelligent DEX Routing:** Simulates fetching quotes from **Raydium** and **Meteora**, comparing prices, and selecting the optimal route (best price/lowest slippage).
+* **Intelligent DEX Routing:** Simulates fetching quotes from **Raydium** and **Meteora**, comparing prices, and selecting the optimal route.
 * **WebSocket Updates:** Real-time feedback loop pushing status changes (`pending` → `routing` → `confirmed`) to the client.
 * **Queue Processing:** Uses an internal queue to manage high loads and ensure orders are processed sequentially and reliably.
 * **Mock Execution:** Simulates realistic network latency (2-3s) and price variations (2-5%) for robust testing without devnet funds.
@@ -31,66 +31,44 @@ To support *Market* or *Sniper* orders, we would simply abstract the `OrderProce
 
 ## ⚙️ Architecture & Design Decisions
 
+The system is designed as a non-blocking, event-driven architecture that handles high concurrency through an internal queue system.
+
 ### 1. Order Execution Flow
-The system follows a non-blocking, event-driven architecture:
 1.  **Submission:** `POST /api/orders/execute` validates the payload and pushes the order to an in-memory queue.
 2.  **WebSocket Upgrade:** The client connects to the WS server using the returned `orderId` to listen for updates.
-3.  **Processing (Queue Consumer):**
+3.  **Processing (Queue Consumer):** The engine picks up orders sequentially.
     * **Routing:** The engine mocks API calls to Raydium and Meteora.
     * **Decision:** It compares the mock prices. If Raydium offers 105 SOL/USDC and Meteora offers 103, the engine routes to Raydium.
     * **Execution:** A transaction is "built" and "submitted" (simulated delay).
-4.  **Completion:** The final status (`confirmed` or `failed`) is pushed to the client, and the loop ends.
+4.  **Completion:** The final status is pushed to the client, and the loop ends.
 
-### 2. Status Lifecycle
+### 2. Transaction Settlement
+* **Execution:** The system "builds" the transaction for the chosen DEX.
+* **Settlement:** It simulates the blockchain confirmation process, handling potential failures or network latency.
+* **Final Output:** Returns the final execution price and a simulated `txHash`.
+
+### 3. Status Lifecycle (WebSocket)
 * 🟡 **PENDING**: Order received and queued.
 * 🔍 **ROUTING**: Fetching and comparing DEX quotes.
-* 🏗️ **BUILDING**: Constructing the transaction payload.
+* 🏗️ **BUILDING**: Creating transaction payload.
 * 🚀 **SUBMITTED**: Transaction sent to the network (mock delay).
 * ✅ **CONFIRMED**: Success! Includes `txHash` and execution price.
+* ❌ **FAILED**: If any step fails (includes error).
 
 ---
 
-## 🚀 Setup & Installation
+## 🧪 Testing & Quality Assurance
 
-### Prerequisites
-* Node.js (v16+)
-* npm or yarn
+This project prioritizes reliability through rigorous testing.
 
-### Steps
-1.  **Clone the repository**
-    ```bash
-    git clone [https://github.com/Mahadev2074/Eterna_Assg_Backend.git](https://github.com/Mahadev2074/Eterna_Assg_Backend.git)
-    cd Eterna_Assg_Backend
-    ```
+### ✅ Postman/Insomnia Collection **plus** ≥10 Unit/Integration Tests
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+I have included a comprehensive testing suite in the `tests/` directory covering:
+1.  **Routing Logic:** Tests ensuring the engine correctly picks the higher price between Raydium and Meteora.
+2.  **Queue Behaviour:** Tests verifying that multiple orders are processed sequentially and no orders are dropped.
+3.  **WebSocket Lifecycle:** Integration tests simulating a client connecting, receiving the correct sequence of status updates (`pending` → `confirmed`), and disconnecting.
+<img width="1418" height="967" alt="image" src="https://github.com/user-attachments/assets/97629d9a-0fbc-4e8f-a1af-3f07d2da6aa8" />
 
-3.  **Configure Environment**
-    Create a `.env` file in the root directory (optional for mock, but good practice):
-    ```env
-    PORT=3000
-    NODE_ENV=development
-    ```
-
-4.  **Run the Server**
-    ```bash
-    # Development mode
-    npm run dev
-
-    # Production build
-    npm run build
-    npm start
-    ```
-
----
-
-## 🧪 Testing
-
-### 1. Running Automated Tests
-The project includes unit and integration tests covering routing logic, queue behavior, and WebSocket lifecycles.
-
+**To run the tests:**
 ```bash
 npm test
